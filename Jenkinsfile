@@ -15,10 +15,16 @@ pipeline {
         stage('Deploy Backend Containers') {
             steps {
                 sh '''
-                docker rm -f backend1 backend2 || true
+                # Stop and remove ALL related containers first
+                docker rm -f nginx-lb backend1 backend2 || true
+
+                # Remove old network safely
                 docker network rm app-network || true
+
+                # Create fresh network
                 docker network create app-network
 
+                # Start backend containers
                 docker run -d --name backend1 --network app-network backend-app
                 docker run -d --name backend2 --network app-network backend-app
 
@@ -30,8 +36,6 @@ pipeline {
         stage('Deploy NGINX Load Balancer') {
             steps {
                 sh '''
-                docker rm -f nginx-lb || true
-
                 docker run -d \
                   --name nginx-lb \
                   --network app-network \
